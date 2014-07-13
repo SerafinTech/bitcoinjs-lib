@@ -25,16 +25,23 @@ function checkBase58Key(base58key){
    } 
 }
 
-function createSeed(base58key,password){
+function createSeed(base58key,password,network){
     var passbuf = new Buffer(password,'utf8')
     var longkey = base58check.decode(base58key)
     var key = longkey.slice(1,33)
+    
+    
     var seed = crypto.HmacSHA256(crypto.HmacSHA256(key,passbuf),passbuf)
     
     return seed
     
 }
 
+function getNetSeed(seed,network){
+    var netBuf = new Buffer(network)
+    
+    return Buffer.concat([seed,netBuf])
+}
 
 function checkPassword(base58key,password){  
     var passbuf = new Buffer(password,'utf8')
@@ -58,5 +65,6 @@ module.exports = {
   getNewBase58Key: getNewBase58Key,
   checkBase58Key: checkBase58Key,
   createSeed: createSeed,
-  checkPassword: checkPassword
+  checkPassword: checkPassword,
+  getNetSeed: getNetSeed
 }

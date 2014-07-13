@@ -55,8 +55,61 @@ var networks = {
     dustThreshold: 546,
     feePerKb: 10000,
     estimateFee: estimateFee('testnet')
+  },
+  namecoin: {
+	magicPrefix: '\x19Namecoin Signed Message:\n',
+	bip32: {
+	  public: 0x01c5ca77, // p2pmining spec
+	  private: 0x01c5c63d // p2pmining spec
+	},
+	pubKeyHash: 0x34,
+	scriptHash: 0x05,
+	wif: 0xb4,
+	dustThreshold: 5460, // p2pmining spec
+	feePerKb: 100000, // p2pmining spec
+	estimateFee: estimateFee('namecoin')
+  }, 
+  devcoin: {
+	magicPrefix: '\x19Devcoin Signed Message:\n',
+	bip32: {
+	  public: 0x010aab44,
+	  private: 0x010aa709
+	},
+	pubKeyHash: 0x00,
+	scriptHash: 0x05,
+	wif: 0x80,
+	dustThreshold: 10000000, // p2pmining spec.
+	feePerKb: 100000000, // p2pmining spec.
+	estimateFee: estimateFee('devcoin')
+  },
+  ixcoin: {
+	magicPrefix: '\x19ixcoin Signed Message:\n',
+	bip32: {
+	  public: 0x03687443,
+	  private: 0x036874c8
+	},
+	pubKeyHash: 0x8a,
+	scriptHash: 0x05,
+	wif: 0x0a,
+	dustThreshold: 5460, // p2pmining spec.
+	feePerKb: 100000, // p2pmining spec.
+	estimateFee: estimateFee('ixcoin')
+  },
+  i0coin: {
+	magicPrefix: '\x19i0coin Signed Message:\n',
+	bip32: {
+	  public: 0x03653a58,
+	  private: 0x03653ae1
+	},
+	pubKeyHash: 0x69,
+	scriptHash: 0x05,
+	wif: 0xe9,
+	dustThreshold: 5460, // p2pmining spec.
+	feePerKb: 100000, // p2pmining spec.
+	estimateFee: estimateFee('i0coin')
   }
 }
+
 
 function estimateFee(type) {
   return function(tx) {
