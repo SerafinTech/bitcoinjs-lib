@@ -2,6 +2,7 @@
 var base58check = require('./base58check')
 var crypto = require('./crypto')
 var rng = require('secure-random')
+var networks = require('./networks')
 
 function getNewBase58Key(password){
    var key = new Buffer(rng(32))
@@ -56,15 +57,26 @@ function checkPassword(base58key,password){
         return true
     }else{
         return false
-    }
-     
+    }     
 }
 
+function checkAddress(address,network){
+    
+    try{
+        var addressData = base58check.decode(address)
+        if(addressData.readUInt8(0) == networks[network].pubKeyHash){
+            return true
+        }else{ return false }
+    }catch(err){
+        return false
+    }   
+}
 
 module.exports = {
   getNewBase58Key: getNewBase58Key,
   checkBase58Key: checkBase58Key,
   createSeed: createSeed,
   checkPassword: checkPassword,
-  getNetSeed: getNetSeed
+  getNetSeed: getNetSeed,
+  checkAddress: checkAddress
 }
