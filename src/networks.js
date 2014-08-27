@@ -13,7 +13,8 @@ var networks = {
     wif: 0x80,
     dustThreshold: 546, // https://github.com/bitcoin/bitcoin/blob/v0.9.2/src/core.h#L151-L162
     feePerKb: 10000, // https://github.com/bitcoin/bitcoin/blob/v0.9.2/src/main.cpp#L53
-    estimateFee: estimateFee('bitcoin')
+    estimateFee: estimateFee('bitcoin'),
+    units: 'BTC'
   },
   dogecoin: {
     magicPrefix: '\x19Dogecoin Signed Message:\n',
@@ -27,7 +28,8 @@ var networks = {
     dustThreshold: 0, // https://github.com/dogecoin/dogecoin/blob/v1.7.1/src/core.h#L155-L160
     dustSoftThreshold: 100000000, // https://github.com/dogecoin/dogecoin/blob/v1.7.1/src/main.h#L62
     feePerKb: 100000000, // https://github.com/dogecoin/dogecoin/blob/v1.7.1/src/main.cpp#L58
-    estimateFee: estimateFee('dogecoin')
+    estimateFee: estimateFee('dogecoin'),
+    units: 'DOGE'
   },
   litecoin: {
     magicPrefix: '\x19Litecoin Signed Message:\n',
@@ -41,7 +43,8 @@ var networks = {
     dustThreshold: 0, // https://github.com/litecoin-project/litecoin/blob/v0.8.7.2/src/main.cpp#L360-L365
     dustSoftThreshold: 100000, // https://github.com/litecoin-project/litecoin/blob/v0.8.7.2/src/main.h#L53
     feePerKb: 100000, // https://github.com/litecoin-project/litecoin/blob/v0.8.7.2/src/main.cpp#L56
-    estimateFee: estimateFee('litecoin')
+    estimateFee: estimateFee('litecoin'),
+    units: 'LTC'
   },
   testnet: {
     magicPrefix: '\x18Bitcoin Signed Message:\n',
@@ -54,7 +57,8 @@ var networks = {
     wif: 0xef,
     dustThreshold: 546,
     feePerKb: 10000,
-    estimateFee: estimateFee('testnet')
+    estimateFee: estimateFee('testnet'),
+    units: 'BTC'
   },
   namecoin: {
 	magicPrefix: '\x19Namecoin Signed Message:\n',
@@ -67,7 +71,8 @@ var networks = {
 	wif: 0xb4,
 	dustThreshold: 5460, // p2pmining spec
 	feePerKb: 100000, // p2pmining spec
-	estimateFee: estimateFee('namecoin')
+	estimateFee: estimateFee('namecoin'),
+	units: 'NMC'
   }, 
   devcoin: {
 	magicPrefix: '\x19Devcoin Signed Message:\n',
@@ -80,7 +85,8 @@ var networks = {
 	wif: 0x80,
 	dustThreshold: 10000000, // p2pmining spec.
 	feePerKb: 100000000, // p2pmining spec.
-	estimateFee: estimateFee('devcoin')
+	estimateFee: estimateFee('devcoin'),
+	units: 'DVC'
   },
   ixcoin: {
 	magicPrefix: '\x19ixcoin Signed Message:\n',
@@ -93,7 +99,8 @@ var networks = {
 	wif: 0x0a,
 	dustThreshold: 5460, // p2pmining spec.
 	feePerKb: 100000, // p2pmining spec.
-	estimateFee: estimateFee('ixcoin')
+	estimateFee: estimateFee('ixcoin'),
+	units: 'IXC'
   },
   i0coin: {
 	magicPrefix: '\x19i0coin Signed Message:\n',
@@ -106,7 +113,8 @@ var networks = {
 	wif: 0xe9,
 	dustThreshold: 5460, // p2pmining spec.
 	feePerKb: 100000, // p2pmining spec.
-	estimateFee: estimateFee('i0coin')
+	estimateFee: estimateFee('i0coin'),
+        units: 'I0C'
   }
 }
 
