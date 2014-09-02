@@ -72,7 +72,8 @@ var networks = {
 	dustThreshold: 5460, // p2pmining spec
 	feePerKb: 100000, // p2pmining spec
 	estimateFee: estimateFee('namecoin'),
-	units: 'NMC'
+	units: 'NMC',
+    newNameFee: 1000000
   }, 
   devcoin: {
 	magicPrefix: '\x19Devcoin Signed Message:\n',

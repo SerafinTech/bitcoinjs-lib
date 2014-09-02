@@ -90,6 +90,35 @@ Transaction.prototype.addOutput = function(scriptPubKey, value) {
   }) - 1)
 }
 
+//Namecoin add new name output
+Transaction.prototype.addNewNameOutput = function(name, rand, address, value) {
+  
+  var toAddress = Address.fromBase58Check(address)
+  var nameBuf = new Buffer(name)
+  
+  var script = scripts.newNameOutput(nameBuf,rand,toAddress.hash)
+
+  return (this.outs.push({
+    script: script,
+    value: value,
+  }) - 1)
+}
+
+Transaction.prototype.addFirstUpdateOutput = function(name, rand, address, nameValue,value) {
+  
+  var toAddress = Address.fromBase58Check(address)
+  var nameBuf = new Buffer(name)
+  var nameValBuf = new Buffer(nameValue)
+  var randBuf = new Buffer(rand,'hex')
+  
+  var script = scripts.nameFirstUpdateOutput(nameBuf,randBuf,nameValBuf,toAddress.hash)
+
+  return (this.outs.push({
+    script: script,
+    value: value,
+  }) - 1)
+}
+
 Transaction.prototype.toBuffer = function () {
   var txInSize = this.ins.reduce(function(a, x) {
     return a + (40 + bufferutils.varIntSize(x.script.buffer.length) + x.script.buffer.length)
@@ -299,6 +328,16 @@ Transaction.fromHex = function(hex) {
  */
 Transaction.prototype.sign = function(index, privKey, hashType) {
   var prevOutScript = privKey.pub.getAddress().toOutputScript()
+  var signature = this.signInput(index, prevOutScript, privKey, hashType)
+
+  // FIXME: Assumed prior TX was pay-to-pubkey-hash
+  var scriptSig = scripts.pubKeyHashInput(signature, privKey.pub)
+  this.setInputScript(index, scriptSig)
+}
+
+Transaction.prototype.signFirstUpdate = function(newUTXO,index, privKey, hashType) {
+  
+  var prevOutScript = scripts.newNameOutput(new Buffer(newUTXO.name),new Buffer(newUTXO.rand,'hex'),privKey.pub.toBuffer())
   var signature = this.signInput(index, prevOutScript, privKey, hashType)
 
   // FIXME: Assumed prior TX was pay-to-pubkey-hash

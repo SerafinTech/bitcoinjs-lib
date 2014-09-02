@@ -2,8 +2,8 @@ var assert = require('assert')
 var BigInteger = require('bigi')
 
 function ECSignature(r, s) {
-  assert(r instanceof BigInteger, 'Expected BigInteger, got ' + r)
-  assert(s instanceof BigInteger, 'Expected BigInteger, got ' + s)
+  //assert(r instanceof BigInteger, 'Expected BigInteger, got ' + r)
+  //assert(s instanceof BigInteger, 'Expected BigInteger, got ' + s)
   this.r = r
   this.s = s
 }

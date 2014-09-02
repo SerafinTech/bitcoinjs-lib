@@ -185,7 +185,7 @@ function Wallet(seed, network) {
       }
     })
   }
-
+  
   this.createTx = function(to, value, fixedFee, changeAddress) {
     assert(value > network.dustThreshold, value + ' must be above dust threshold (' + network.dustThreshold + ' Satoshis)')
 
@@ -225,6 +225,94 @@ function Wallet(seed, network) {
     return tx
   }
 
+  //NAMECOIN FUNCTIONS
+  
+  //New Name
+  this.createNewName = function(name, to, changeAddress, fixedFee){
+    var utxos = getCandidateOutputs(network.newNameFee)
+    var accum = 0
+    var subTotal = network.newNameFee
+    var addresses = []
+    
+    var tx = new Transaction()
+    
+    var rand = new Buffer(rng(8))
+    rand = Buffer.concat([rand,new Buffer('00','hex')])
+    
+    tx.addNewNameOutput(name, rand, to, network.newNameFee)
+    
+    for (var i = 0; i < utxos.length; ++i) {
+      var utxo = utxos[i]
+      addresses.push(utxo.address)
+
+      var outpoint = utxo.from.split(':')
+      tx.addInput(outpoint[0], parseInt(outpoint[1]))
+
+      var fee = fixedFee == undefined ? estimateFeePadChangeOutput(tx) : fixedFee
+
+      accum += utxo.value
+      subTotal = network.newNameFee + fee
+      if (accum >= subTotal) {
+        var change = accum - subTotal
+
+        if (change > network.dustThreshold) {
+          tx.addOutput(changeAddress || getChangeAddress(), change)
+        }
+
+        break
+      }
+    }
+    assert(accum >= subTotal, 'Not enough funds (incl. fee): ' + accum + ' < ' + subTotal)
+
+    this.signWith(tx, addresses)
+    return tx   
+  }
+  
+  //First Update Name
+  this.createFirstUpdateName = function(newUTXO,to, nameValue, changeAddress, fixedFee){
+    
+    var utxos = getCandidateOutputs()
+    var accum = 0
+    var subTotal = 0
+    var addresses = []
+    
+    
+    var tx = new Transaction()
+    var outpoint = newUTXO.from.split(':')
+    tx.addInput(outpoint[0], parseInt(outpoint[1]))
+    addresses.push(newUTXO.address)
+    
+    tx.addFirstUpdateOutput(newUTXO.name, newUTXO.rand, to, nameValue,newUTXO.value)
+    
+    for (var i = 0; i < utxos.length; ++i) {
+      var utxo = utxos[i]
+      addresses.push(utxo.address)
+
+      var outpoint = utxo.from.split(':')
+      tx.addInput(outpoint[0], parseInt(outpoint[1]))
+
+      var fee = fixedFee == undefined ? estimateFeePadChangeOutput(tx) : fixedFee
+
+      accum += utxo.value
+      subTotal = network.newNameFee + fee
+      if (accum >= subTotal) {
+        var change = accum - subTotal
+
+        if (change > network.dustThreshold) {
+          tx.addOutput(changeAddress || getChangeAddress(), change)
+        }
+
+        break
+      }
+    }
+    assert(accum >= subTotal, 'Not enough funds (incl. fee): ' + accum + ' < ' + subTotal)
+    
+    this.signFirstUpdate(tx, addresses)
+    return tx
+    
+  }
+  //
+  
   function getCandidateOutputs() {
     var unspent = []
 
@@ -253,6 +341,32 @@ function Wallet(seed, network) {
   }
 
   this.signWith = function(tx, addresses) {
+    assert.equal(tx.ins.length, addresses.length, 'Number of addresses must match number of transaction inputs')
+
+    addresses.forEach(function(address, i) {
+      var key = me.getPrivateKeyForAddress(address)
+
+      tx.sign(i, key)
+    })
+
+    return tx
+  }
+  
+  this.signFirstUpdate = function(tx, addresses) {
+    assert.equal(tx.ins.length, addresses.length, 'Number of addresses must match number of transaction inputs')
+    var first = false
+    addresses.forEach(function(address, i) {
+      var key = me.getPrivateKeyForAddress(address)
+      if(first){
+        tx.sign(i, key)
+      }else{
+        tx.signFirstUpdate(i, key)
+      }
+    })
+    return tx
+  }
+  
+  this.signUpdate = function(tx, addresses) {
     assert.equal(tx.ins.length, addresses.length, 'Number of addresses must match number of transaction inputs')
 
     addresses.forEach(function(address, i) {

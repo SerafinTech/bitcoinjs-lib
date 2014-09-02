@@ -4,6 +4,15 @@ var CryptoJS = require('crypto-js')
 var crypto = require('crypto')
 var convert = require('./convert')
 
+
+function aesEncrypt(message,passphrase){
+    return CryptoJS.AES.encrypt(message, passphrase).toString()    
+}
+
+function aesDecrypt(encrypted,passphrase){
+    return CryptoJS.AES.decrypt(encrypted, passphrase).toString(CryptoJS.enc.Utf8);
+}
+
 function hash160(buffer) {
   return ripemd160(sha256(buffer))
 }
@@ -48,5 +57,8 @@ module.exports = {
   hash160: hash160,
   hash256: hash256,
   HmacSHA256: HmacSHA256,
-  HmacSHA512: HmacSHA512
+  HmacSHA512: HmacSHA512,
+  aesEncrypt: aesEncrypt,
+  aesDecrypt: aesDecrypt
+  
 }

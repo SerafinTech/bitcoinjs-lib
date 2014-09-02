@@ -2,6 +2,14 @@ module.exports = {
   // push value
   OP_FALSE     : 0,
   OP_0         : 0,
+  
+  // namecoin codes
+  OP_NAME_INVALID      : 0,
+  OP_NAME_NEW          : 1,
+  OP_NAME_FIRSTUPDATE  : 2,
+  OP_NAME_UPDATE        : 3,
+  OP_NAME_NOP          : 4,
+  
   OP_PUSHDATA1 : 76,
   OP_PUSHDATA2 : 77,
   OP_PUSHDATA4 : 78,

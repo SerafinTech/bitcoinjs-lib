@@ -1,6 +1,6 @@
 var assert = require('assert')
 var opcodes = require('./opcodes')
-
+var crypto = require('./crypto')
 // FIXME: use ECPubKey, currently the circular dependency breaks everything.
 //
 // Solutions:
@@ -246,6 +246,65 @@ function multisigInput(signatures, scriptPubKey) {
   return Script.fromChunks([].concat(opcodes.OP_0, signatures))
 }
 
+//Namecoin scripts
+
+// OP_NAME_NEW {hash160(rand,name)} OP2DROP OP_DUP OP_HASH160 {pubKeyHash} OP_EQUALVERIFY OP_CHECKSIG
+function newNameOutput(name,rand,hash) {
+  assert(Buffer.isBuffer(hash), 'Expected Buffer, got ' + hash)
+  
+  //needs to be implemented
+  var nameHash = crypto.hash160(Buffer.concat([rand,name]))
+  
+  return Script.fromChunks([
+    opcodes.OP_NAME_NEW + 80,
+    nameHash,
+    opcodes.OP_2DROP,
+    opcodes.OP_DUP,
+    opcodes.OP_HASH160,
+    hash,
+    opcodes.OP_EQUALVERIFY,
+    opcodes.OP_CHECKSIG
+  ])
+}
+
+// OP_NAME_FIRSTUPDATE {name} {rand} {name value} OP_2DROP OP_2DROP OP_DUP OP_HASH160 {pubKeyHash} OP_EQUALVERIFY OP_CHECKSIG
+function nameFirstUpdateOutput(name,rand,nameValue,hash) {
+  assert(Buffer.isBuffer(hash), 'Expected Buffer, got ' + hash)
+  
+  return Script.fromChunks([
+    opcodes.OP_NAME_FIRSTUPDATE + 80,
+    name,
+    rand,
+    nameValue,
+    opcodes.OP_2DROP,
+    opcodes.OP_2DROP,
+    opcodes.OP_DUP,
+    opcodes.OP_HASH160,
+    hash,
+    opcodes.OP_EQUALVERIFY,
+    opcodes.OP_CHECKSIG
+  ])
+}
+
+// OP_NAME_UPDATE {name} {rand} {name value} OP_2DROP OP_2DROP OP_DUP OP_HASH160 {pubKeyHash} OP_EQUALVERIFY OP_CHECKSIG
+function nameUpdateOutput(name,nameValue,hash) {
+  assert(Buffer.isBuffer(hash), 'Expected Buffer, got ' + hash)
+  
+  return Script.fromChunks([
+    opcodes.OP_NAME_UPDATE + 80,
+    name,
+    nameValue,
+    opcodes.OP_2DROP,
+    opcodes.OP_DROP,
+    opcodes.OP_DUP,
+    opcodes.OP_HASH160,
+    hash,
+    opcodes.OP_EQUALVERIFY,
+    opcodes.OP_CHECKSIG
+  ])
+}
+// 
+
 module.exports = {
   classifyInput: classifyInput,
   classifyOutput: classifyOutput,
@@ -256,5 +315,8 @@ module.exports = {
   pubKeyInput: pubKeyInput,
   pubKeyOutput: pubKeyOutput,
   scriptHashInput: scriptHashInput,
-  scriptHashOutput: scriptHashOutput
+  scriptHashOutput: scriptHashOutput,
+  newNameOutput: newNameOutput,
+  nameFirstUpdateOutput: nameFirstUpdateOutput,
+  nameUpdateOutput: nameUpdateOutput 
 }
