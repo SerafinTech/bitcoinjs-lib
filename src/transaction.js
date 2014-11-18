@@ -119,6 +119,21 @@ Transaction.prototype.addFirstUpdateOutput = function(name, rand, address, nameV
   }) - 1)
 }
 
+Transaction.prototype.addNameUpdateOutput = function(name, address, nameValue,value) {
+  
+  var toAddress = Address.fromBase58Check(address)
+  var nameBuf = new Buffer(name)
+  var nameValBuf = new Buffer(nameValue)
+  
+  
+  var script = scripts.nameUpdateOutput(nameBuf,nameValBuf,toAddress.hash)
+
+  return (this.outs.push({
+    script: script,
+    value: value,
+  }) - 1)
+}
+
 Transaction.prototype.toBuffer = function () {
   var txInSize = this.ins.reduce(function(a, x) {
     return a + (40 + bufferutils.varIntSize(x.script.buffer.length) + x.script.buffer.length)
@@ -335,9 +350,18 @@ Transaction.prototype.sign = function(index, privKey, hashType) {
   this.setInputScript(index, scriptSig)
 }
 
-Transaction.prototype.signFirstUpdate = function(newUTXO,index, privKey, hashType) {
+Transaction.prototype.signNameInput = function(UTXO,index, privKey, hashType) {
   
-  var prevOutScript = scripts.newNameOutput(new Buffer(newUTXO.name),new Buffer(newUTXO.rand,'hex'),privKey.pub.toBuffer())
+  var prevOutScript = null
+  if(UTXO.name_op === 1){
+    prevOutScript = scripts.newNameOutput(new Buffer(UTXO.name),new Buffer(UTXO.rand,'hex'),privKey.pub.toBuffer())
+  }
+  if(UTXO.name_op === 2){
+    prevOutScript = scripts.nameFirstUpdateOutput(new Buffer(UTXO.name),new Buffer(UTXO.rand,'hex'),new Buffer(UTXO.name_value),privKey.pub.toBuffer())
+  }
+  if(UTXO.name_op === 3){
+    prevOutScript = scripts.nameUpdateOutput(new Buffer(UTXO.name),new Buffer(UTXO.name_value),privKey.pub.toBuffer())
+  }
   var signature = this.signInput(index, prevOutScript, privKey, hashType)
 
   // FIXME: Assumed prior TX was pay-to-pubkey-hash

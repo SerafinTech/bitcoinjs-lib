@@ -286,7 +286,7 @@ function nameFirstUpdateOutput(name,rand,nameValue,hash) {
   ])
 }
 
-// OP_NAME_UPDATE {name} {rand} {name value} OP_2DROP OP_2DROP OP_DUP OP_HASH160 {pubKeyHash} OP_EQUALVERIFY OP_CHECKSIG
+// OP_NAME_UPDATE {name} {name value} OP_2DROP OP_2DROP OP_DUP OP_HASH160 {pubKeyHash} OP_EQUALVERIFY OP_CHECKSIG
 function nameUpdateOutput(name,nameValue,hash) {
   assert(Buffer.isBuffer(hash), 'Expected Buffer, got ' + hash)
   
