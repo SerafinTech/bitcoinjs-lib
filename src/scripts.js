@@ -256,7 +256,7 @@ function newNameOutput(name,rand,hash) {
   var nameHash = crypto.hash160(Buffer.concat([rand,name]))
   
   return Script.fromChunks([
-    opcodes.OP_NAME_NEW + 80,
+    opcodes.OP_NAME_NEW,
     nameHash,
     opcodes.OP_2DROP,
     opcodes.OP_DUP,
@@ -272,7 +272,7 @@ function nameFirstUpdateOutput(name,rand,nameValue,hash) {
   assert(Buffer.isBuffer(hash), 'Expected Buffer, got ' + hash)
   
   return Script.fromChunks([
-    opcodes.OP_NAME_FIRSTUPDATE + 80,
+    opcodes.OP_NAME_FIRSTUPDATE,
     name,
     rand,
     nameValue,
@@ -291,7 +291,7 @@ function nameUpdateOutput(name,nameValue,hash) {
   assert(Buffer.isBuffer(hash), 'Expected Buffer, got ' + hash)
   
   return Script.fromChunks([
-    opcodes.OP_NAME_UPDATE + 80,
+    opcodes.OP_NAME_UPDATE,
     name,
     nameValue,
     opcodes.OP_2DROP,

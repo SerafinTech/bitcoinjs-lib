@@ -11,6 +11,6 @@ var rng = require('secure-random');
 var encName = bitcoin.crypto.aesEncrypt('d/yellow',"qwerty");
 var decodeName = bitcoin.crypto.aesDecrypt(encName,"qwerty")
 console.log(encName);
-console.log(decodeName);
+console.log(script.toHex());
 
 

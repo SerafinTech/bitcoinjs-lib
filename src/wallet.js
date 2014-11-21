@@ -299,8 +299,8 @@ function Wallet(seed, network) {
     
     var tx = new Transaction()
     tx.version = 0x7100
-    var outpoint = nameUTXO.from.split(':')
-    tx.addInput(outpoint[0], parseInt(outpoint[1]))
+    
+    tx.addInput(nameUTXO.hash, parseInt(nameUTXO.outputIndex))
     addresses.push(nameUTXO.address)
     
     tx.addFirstUpdateOutput(nameUTXO.name, nameUTXO.rand, to, nameValue,nameUTXO.value)
@@ -344,8 +344,8 @@ function Wallet(seed, network) {
     
     var tx = new Transaction()
     tx.version = 0x7100
-    var outpoint = nameUTXO.from.split(':')
-    tx.addInput(outpoint[0], parseInt(outpoint[1]))
+    
+    tx.addInput(nameUTXO.hash, parseInt(nameUTXO.outputIndex))
     addresses.push(nameUTXO.address)
     
     tx.addNameUpdateOutput(nameUTXO.name, to, nameValue,nameUTXO.value)

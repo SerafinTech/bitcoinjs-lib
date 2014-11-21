@@ -354,14 +354,15 @@ Transaction.prototype.signNameInput = function(UTXO,index, privKey, hashType) {
   
   var prevOutScript = null
   if(UTXO.name_op === 1){
-    prevOutScript = scripts.newNameOutput(new Buffer(UTXO.name),new Buffer(UTXO.rand,'hex'),privKey.pub.toBuffer())
+    prevOutScript = scripts.newNameOutput(new Buffer(UTXO.name),new Buffer(UTXO.rand,'hex'),crypto.hash160(privKey.pub.toBuffer()))
   }
   if(UTXO.name_op === 2){
-    prevOutScript = scripts.nameFirstUpdateOutput(new Buffer(UTXO.name),new Buffer(UTXO.rand,'hex'),new Buffer(UTXO.name_value),privKey.pub.toBuffer())
+    prevOutScript = scripts.nameFirstUpdateOutput(new Buffer(UTXO.name),new Buffer(UTXO.rand,'hex'),new Buffer(UTXO.name_value),crypto.hash160(privKey.pub.toBuffer()))
   }
   if(UTXO.name_op === 3){
-    prevOutScript = scripts.nameUpdateOutput(new Buffer(UTXO.name),new Buffer(UTXO.name_value),privKey.pub.toBuffer())
+    prevOutScript = scripts.nameUpdateOutput(new Buffer(UTXO.name),new Buffer(UTXO.name_value),crypto.hash160(privKey.pub.toBuffer()))
   }
+  console.log(prevOutScript.toASM())
   var signature = this.signInput(index, prevOutScript, privKey, hashType)
 
   // FIXME: Assumed prior TX was pay-to-pubkey-hash
