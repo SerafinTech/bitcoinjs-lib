@@ -315,7 +315,7 @@ function Wallet(seed, network) {
       var fee = fixedFee == undefined ? estimateFeePadChangeOutput(tx) : fixedFee
 
       accum += utxo.value
-      subTotal = network.newNameFee + fee
+      subTotal = fee
       if (accum >= subTotal) {
         var change = accum - subTotal
 
@@ -360,7 +360,7 @@ function Wallet(seed, network) {
       var fee = fixedFee == undefined ? estimateFeePadChangeOutput(tx) : fixedFee
 
       accum += utxo.value
-      subTotal = network.newNameFee + fee
+      subTotal = fee
       if (accum >= subTotal) {
         var change = accum - subTotal
 

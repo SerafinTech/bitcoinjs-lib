@@ -70,7 +70,7 @@ var networks = {
 	scriptHash: 0x05,
 	wif: 0xb4,
 	dustThreshold: 5460, // p2pmining spec
-	feePerKb: 100000, // p2pmining spec
+	feePerKb: 500000, // p2pmining spec
 	estimateFee: estimateFee('namecoin'),
 	units: 'NMC',
     newNameFee: 1000000
