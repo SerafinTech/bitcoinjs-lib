@@ -1,19 +1,17 @@
 module.exports = {
   Address: require('./address'),
-  base58check: require('./base58check'),
+  Block: require('./block'),
   bufferutils: require('./bufferutils'),
-  convert: require('./convert'),
   crypto: require('./crypto'),
   ecdsa: require('./ecdsa'),
-  ECKey: require('./eckey'),
-  ECPubKey: require('./ecpubkey'),
+  ECPair: require('./ecpair'),
   ECSignature: require('./ecsignature'),
-  Message: require('./message'),
+  message: require('./message'),
   opcodes: require('./opcodes'),
   HDNode: require('./hdnode'),
   Script: require('./script'),
   scripts: require('./scripts'),
   Transaction: require('./transaction'),
-  networks: require('./networks'),
-  Wallet: require('./wallet')
+  TransactionBuilder: require('./transaction_builder'),
+  networks: require('./networks')
 }

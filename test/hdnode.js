@@ -1,236 +1,216 @@
+/* global describe, it, beforeEach */
+/* eslint-disable no-new */
+
 var assert = require('assert')
 var networks = require('../src/networks')
+var sinon = require('sinon')
 
 var BigInteger = require('bigi')
+var ECPair = require('../src/ecpair')
 var HDNode = require('../src/hdnode')
-
-var ecurve = require('ecurve')
-var curve = ecurve.getCurveByName('secp256k1')
 
 var fixtures = require('./fixtures/hdnode.json')
 
-describe('HDNode', function() {
-  describe('Constructor', function() {
-    var d = BigInteger.ONE
-    var Q = curve.G.multiply(d)
-    var chainCode = new Buffer(32)
-    chainCode.fill(1)
+describe('HDNode', function () {
+  describe('Constructor', function () {
+    var keyPair, chainCode
 
-    it('calculates the publicKey from a BigInteger', function() {
-      var hd = new HDNode(d, chainCode)
+    beforeEach(function () {
+      var d = BigInteger.ONE
 
-      assert(hd.pubKey.Q.equals(Q))
+      keyPair = new ECPair(d, null)
+      chainCode = new Buffer(32)
+      chainCode.fill(1)
     })
 
-    it('only uses compressed points', function() {
-      var hd = new HDNode(Q, chainCode)
-      var hdP = new HDNode(d, chainCode)
+    it('stores the keyPair/chainCode directly', function () {
+      var hd = new HDNode(keyPair, chainCode)
 
-      assert.strictEqual(hd.pubKey.compressed, true)
-      assert.strictEqual(hdP.pubKey.compressed, true)
+      assert.strictEqual(hd.keyPair, keyPair)
+      assert.strictEqual(hd.chainCode, chainCode)
     })
 
-    it('has a default depth/index of 0', function() {
-      var hd = new HDNode(Q, chainCode)
+    it('has a default depth/index of 0', function () {
+      var hd = new HDNode(keyPair, chainCode)
 
       assert.strictEqual(hd.depth, 0)
       assert.strictEqual(hd.index, 0)
     })
 
-    it('defaults to the bitcoin network', function() {
-      var hd = new HDNode(Q, chainCode)
+    it('throws on uncompressed keyPair', function () {
+      keyPair.compressed = false
 
-      assert.equal(hd.network, networks.bitcoin)
+      assert.throws(function () {
+        new HDNode(keyPair, chainCode)
+      }, /BIP32 only allows compressed keyPairs/)
     })
 
-    it('supports alternative networks', function() {
-      var hd = new HDNode(Q, chainCode, networks.testnet)
-
-      assert.equal(hd.network, networks.testnet)
+    it('throws when an invalid length chain code is given', function () {
+      assert.throws(function () {
+        new HDNode(keyPair, chainCode.slice(0, 20))
+      }, /Expected chainCode length of 32, got 20/)
     })
 
-    it('throws an exception when an unknown network is given', function() {
-      assert.throws(function() {
-        new HDNode(d, chainCode, {})
+    it('throws when an unknown network is given', function () {
+      keyPair.network = {}
+
+      assert.throws(function () {
+        new HDNode(keyPair, chainCode)
       }, /Unknown BIP32 constants for network/)
     })
   })
 
-  describe('fromSeed*', function() {
-    fixtures.valid.forEach(function(f) {
-      it('calculates privKey and chainCode for ' + f.master.fingerprint, function() {
-        var hd = HDNode.fromSeedHex(f.master.seed)
+  describe('fromSeed*', function () {
+    fixtures.valid.forEach(function (f) {
+      it('calculates privKey and chainCode for ' + f.master.fingerprint, function () {
+        var network = networks[f.network]
+        var hd = HDNode.fromSeedHex(f.master.seed, network)
 
-        assert.equal(hd.privKey.toWIF(), f.master.wif)
-        assert.equal(hd.chainCode.toString('hex'), f.master.chainCode)
+        assert.strictEqual(hd.keyPair.toWIF(), f.master.wif)
+        assert.strictEqual(hd.chainCode.toString('hex'), f.master.chainCode)
+      })
+    })
+
+    it('throws on low entropy seed', function () {
+      assert.throws(function () {
+        HDNode.fromSeedHex('ffffffffff')
+      }, /Seed should be at least 128 bits/)
+    })
+
+    it('throws on too high entropy seed', function () {
+      assert.throws(function () {
+        HDNode.fromSeedHex('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff')
+      }, /Seed should be at most 512 bits/)
+    })
+  })
+
+  describe('toBase58', function () {
+    fixtures.valid.forEach(function (f) {
+      it('exports ' + f.master.base58 + ' (public) correctly', function () {
+        var network = networks[f.network]
+        var hd = HDNode.fromSeedHex(f.master.seed, network).neutered()
+
+        assert.strictEqual(hd.toBase58(), f.master.base58)
+      })
+    })
+
+    fixtures.valid.forEach(function (f) {
+      it('exports ' + f.master.base58Priv + ' (private) correctly', function () {
+        var network = networks[f.network]
+        var hd = HDNode.fromSeedHex(f.master.seed, network)
+
+        assert.strictEqual(hd.toBase58(), f.master.base58Priv)
       })
     })
   })
 
-  describe('toBase58', function() {
-    fixtures.valid.forEach(function(f) {
-      it('exports ' + f.master.base58 + ' (public) correctly', function() {
-        var hd = HDNode.fromSeedHex(f.master.seed)
-
-        assert.equal(hd.toBase58(false), f.master.base58)
-      })
-    })
-
-    fixtures.valid.forEach(function(f) {
-      it('exports ' + f.master.base58Priv + ' (private) correctly', function() {
-        var hd = HDNode.fromSeedHex(f.master.seed)
-
-        assert.equal(hd.toBase58(true), f.master.base58Priv)
-      })
-    })
-
-    it('fails when there is no private key', function() {
-      var hd = HDNode.fromBase58(fixtures.valid[0].master.base58)
-
-      assert.throws(function() {
-        hd.toBase58(true)
-      }, /Missing private key/)
-    })
-  })
-
-  describe('fromBase58', function() {
-    fixtures.valid.forEach(function(f) {
-      it('imports ' + f.master.base58 + ' (public) correctly', function() {
+  describe('fromBase58', function () {
+    fixtures.valid.forEach(function (f) {
+      it('imports ' + f.master.base58 + ' (public) correctly', function () {
+        var network = networks[f.network]
         var hd = HDNode.fromBase58(f.master.base58)
 
-        assert.equal(hd.toBase58(), f.master.base58)
+        assert.strictEqual(hd.toBase58(), f.master.base58)
+        assert.strictEqual(hd.keyPair.network, network)
       })
     })
 
-    fixtures.valid.forEach(function(f) {
-      it('imports ' + f.master.base58Priv + ' (private) correctly', function() {
-        var hd = HDNode.fromBase58(f.master.base58Priv)
+    fixtures.valid.forEach(function (f) {
+      it('imports ' + f.master.base58Priv + ' (private) correctly', function () {
+        var network = networks[f.network]
+        var hd = HDNode.fromBase58(f.master.base58Priv, network)
 
-        assert.equal(hd.toBase58(), f.master.base58Priv)
+        assert.strictEqual(hd.toBase58(), f.master.base58Priv)
+        assert.strictEqual(hd.keyPair.network, network)
       })
     })
 
-    fixtures.invalid.fromBase58.forEach(function(f) {
-      it('throws on ' + f.string, function() {
-        assert.throws(function() {
-          HDNode.fromBase58(f.string)
+    fixtures.invalid.fromBase58.forEach(function (f) {
+      it('throws on ' + f.string, function () {
+        assert.throws(function () {
+          var network = networks[f.network]
+
+          HDNode.fromBase58(f.string, network)
         }, new RegExp(f.exception))
       })
     })
   })
 
-  describe('fromBuffer/fromHex', function() {
-    fixtures.valid.forEach(function(f) {
-      it('imports ' + f.master.hex + ' (public) correctly', function() {
-        var hd = HDNode.fromHex(f.master.hex)
-
-        assert.equal(hd.toBuffer().toString('hex'), f.master.hex)
-      })
-    })
-
-    fixtures.valid.forEach(function(f) {
-      it('imports ' + f.master.hexPriv + ' (private) correctly', function() {
-        var hd = HDNode.fromHex(f.master.hexPriv)
-
-        assert.equal(hd.toBuffer().toString('hex'), f.master.hexPriv)
-      })
-    })
-
-    fixtures.invalid.fromBuffer.forEach(function(f) {
-      it('throws on ' + f.hex, function() {
-        assert.throws(function() {
-          HDNode.fromHex(f.hex)
-        }, new RegExp(f.exception))
-      })
-    })
-  })
-
-  describe('toBuffer/toHex', function() {
-    fixtures.valid.forEach(function(f) {
-      it('exports ' + f.master.hex + ' (public) correctly', function() {
-        var hd = HDNode.fromSeedHex(f.master.seed)
-
-        assert.equal(hd.toHex(false), f.master.hex)
-      })
-    })
-
-    fixtures.valid.forEach(function(f) {
-      it('exports ' + f.master.hexPriv + ' (private) correctly', function() {
-        var hd = HDNode.fromSeedHex(f.master.seed)
-
-        assert.equal(hd.toHex(true), f.master.hexPriv)
-      })
-    })
-
-    it('fails when there is no private key', function() {
-      var hd = HDNode.fromHex(fixtures.valid[0].master.hex)
-
-      assert.throws(function() {
-        hd.toHex(true)
-      }, /Missing private key/)
-    })
-  })
-
-  describe('getIdentifier', function() {
+  describe('getIdentifier', function () {
     var f = fixtures.valid[0]
 
-    it('returns the identifier for ' + f.master.fingerprint, function() {
+    it('returns the identifier for ' + f.master.fingerprint, function () {
       var hd = HDNode.fromBase58(f.master.base58)
 
-      assert.equal(hd.getIdentifier().toString('hex'), f.master.identifier)
+      assert.strictEqual(hd.getIdentifier().toString('hex'), f.master.identifier)
     })
   })
 
-  describe('getFingerprint', function() {
+  describe('getFingerprint', function () {
     var f = fixtures.valid[0]
 
-    it('returns the fingerprint for ' + f.master.fingerprint, function() {
+    it('returns the fingerprint for ' + f.master.fingerprint, function () {
       var hd = HDNode.fromBase58(f.master.base58)
 
-      assert.equal(hd.getFingerprint().toString('hex'), f.master.fingerprint)
+      assert.strictEqual(hd.getFingerprint().toString('hex'), f.master.fingerprint)
     })
   })
 
-  describe('getAddress', function() {
+  describe('getAddress', function () {
+    var hd
+
+    beforeEach(function () {
+      var f = fixtures.valid[0]
+
+      hd = HDNode.fromBase58(f.master.base58)
+    })
+
+    it('wraps ECPair.getAddress', sinon.test(function () {
+      this.mock(hd.keyPair).expects('getAddress')
+        .once().returns('foobar')
+
+      assert.strictEqual(hd.getAddress(), 'foobar')
+    }))
+  })
+
+  describe('neutered', function () {
     var f = fixtures.valid[0]
 
-    it('returns the Address (pubHash) for ' + f.master.fingerprint, function() {
+    it('strips all private information', function () {
       var hd = HDNode.fromBase58(f.master.base58)
+      var hdn = hd.neutered()
 
-      assert.equal(hd.getAddress().toString(), f.master.address)
-    })
-
-    it('supports alternative networks', function() {
-      var hd = HDNode.fromBase58(f.master.base58)
-      hd.network = networks.testnet
-
-      assert.equal(hd.getAddress().version, networks.testnet.pubKeyHash)
+      assert.strictEqual(hdn.keyPair.d, undefined)
+      assert.strictEqual(hdn.keyPair.Q, hd.keyPair.Q)
+      assert.strictEqual(hdn.chainCode, hd.chainCode)
+      assert.strictEqual(hdn.depth, hd.depth)
+      assert.strictEqual(hdn.index, hd.index)
     })
   })
 
-  describe('derive', function() {
-    function verifyVector(hd, v, depth) {
-      assert.equal(hd.privKey.toWIF(), v.wif)
-      assert.equal(hd.pubKey.toHex(), v.pubKey)
-      assert.equal(hd.chainCode.toString('hex'), v.chainCode)
-      assert.equal(hd.depth, depth || 0)
+  describe('derive', function () {
+    function verifyVector (hd, v, depth) {
+      assert.strictEqual(hd.keyPair.toWIF(), v.wif)
+      assert.strictEqual(hd.keyPair.getPublicKeyBuffer().toString('hex'), v.pubKey)
+      assert.strictEqual(hd.chainCode.toString('hex'), v.chainCode)
+      assert.strictEqual(hd.depth, depth || 0)
 
       if (v.hardened) {
-        assert.equal(hd.index, v.m + HDNode.HIGHEST_BIT)
+        assert.strictEqual(hd.index, v.m + HDNode.HIGHEST_BIT)
       } else {
-        assert.equal(hd.index, v.m)
+        assert.strictEqual(hd.index, v.m)
       }
     }
 
-    fixtures.valid.forEach(function(f, j) {
-      var hd = HDNode.fromSeedHex(f.master.seed)
+    fixtures.valid.forEach(function (f) {
+      var network = networks[f.network]
+      var hd = HDNode.fromSeedHex(f.master.seed, network)
 
       // FIXME: test data is only testing Private -> private for now
-      f.children.forEach(function(c, i) {
-        it(c.description + ' from ' + f.master.fingerprint, function() {
+      f.children.forEach(function (c, i) {
+        it(c.description + ' from ' + f.master.fingerprint, function () {
           if (c.hardened) {
             hd = hd.deriveHardened(c.m)
-
           } else {
             hd = hd.derive(c.m)
           }
@@ -240,48 +220,44 @@ describe('HDNode', function() {
       })
     })
 
-    it('works for Private -> public (neutered)', function() {
+    it('works for Private -> public (neutered)', function () {
       var f = fixtures.valid[1]
       var c = f.children[0]
 
-      var parentNode = HDNode.fromBase58(f.master.base58Priv)
-      var child = parentNode.derive(c.m)
+      var master = HDNode.fromBase58(f.master.base58Priv)
+      var child = master.derive(c.m).neutered()
 
-      // FIXME: N(CKDpriv((kpar, cpar), i)), could be done better...
-      var childNeutered = HDNode.fromBase58(child.toBase58(false)) // neuter
-      assert.equal(childNeutered.toBase58(), c.base58)
+      assert.strictEqual(child.toBase58(), c.base58)
     })
 
-    it('works for Private -> public (neutered, hardened)', function() {
+    it('works for Private -> public (neutered, hardened)', function () {
       var f = fixtures.valid[0]
       var c = f.children[0]
 
-      var parentNode = HDNode.fromBase58(f.master.base58Priv)
-      var child = parentNode.deriveHardened(c.m)
+      var master = HDNode.fromBase58(f.master.base58Priv)
+      var child = master.deriveHardened(c.m).neutered()
 
-      // FIXME: N(CKDpriv((kpar, cpar), i)), could be done better...
-      var childNeutered = HDNode.fromBase58(child.toBase58(false)) // neuter
-      assert.equal(childNeutered.toBase58(), c.base58)
+      assert.strictEqual(child.toBase58(), c.base58)
     })
 
-    it('works for Public -> public', function() {
+    it('works for Public -> public', function () {
       var f = fixtures.valid[1]
       var c = f.children[0]
 
-      var parentNode = HDNode.fromBase58(f.master.base58)
-      var child = parentNode.derive(c.m)
+      var master = HDNode.fromBase58(f.master.base58)
+      var child = master.derive(c.m)
 
-      assert.equal(child.toBase58(), c.base58)
+      assert.strictEqual(child.toBase58(), c.base58)
     })
 
-    it('throws on Public -> public (hardened)', function() {
+    it('throws on Public -> public (hardened)', function () {
       var f = fixtures.valid[0]
       var c = f.children[0]
 
-      var parentNode = HDNode.fromBase58(f.master.base58)
+      var master = HDNode.fromBase58(f.master.base58)
 
-      assert.throws(function() {
-        parentNode.deriveHardened(c.m)
+      assert.throws(function () {
+        master.deriveHardened(c.m)
       }, /Could not derive hardened child key/)
     })
   })
