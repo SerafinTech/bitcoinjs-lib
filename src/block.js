@@ -47,7 +47,8 @@ Block.fromBuffer = function (buffer) {
   // FIXME: poor performance
   function readTransaction () {
     var tx = Transaction.fromBuffer(buffer.slice(offset), true)
-
+    tx.blockPos = offset
+    
     offset += tx.toBuffer().length
     return tx
   }
