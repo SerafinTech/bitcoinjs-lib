@@ -7,6 +7,7 @@ var opcodes = require('./opcodes')
 var Script = require('./script')
 
 function Transaction () {
+  this.blockPos = null
   this.version = 1
   this.locktime = 0
   this.ins = []
