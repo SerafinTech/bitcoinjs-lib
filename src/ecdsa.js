@@ -1,5 +1,5 @@
 var assert = require('assert')
-var crypto = require('crypto')
+var createHmac = require('create-hmac')
 var typeForce = require('typeforce')
 
 var BigInteger = require('bigi')
@@ -29,7 +29,7 @@ function deterministicGenerateK (curve, hash, d, checkSig) {
   k.fill(0)
 
   // Step D
-  k = crypto.createHmac('sha256', k)
+  k = createHmac('sha256', k)
     .update(v)
     .update(ZERO)
     .update(x)
@@ -37,10 +37,10 @@ function deterministicGenerateK (curve, hash, d, checkSig) {
     .digest()
 
   // Step E
-  v = crypto.createHmac('sha256', k).update(v).digest()
+  v = createHmac('sha256', k).update(v).digest()
 
   // Step F
-  k = crypto.createHmac('sha256', k)
+  k = createHmac('sha256', k)
     .update(v)
     .update(ONE)
     .update(x)
@@ -48,26 +48,26 @@ function deterministicGenerateK (curve, hash, d, checkSig) {
     .digest()
 
   // Step G
-  v = crypto.createHmac('sha256', k).update(v).digest()
+  v = createHmac('sha256', k).update(v).digest()
 
   // Step H1/H2a, ignored as tlen === qlen (256 bit)
   // Step H2b
-  v = crypto.createHmac('sha256', k).update(v).digest()
+  v = createHmac('sha256', k).update(v).digest()
 
   var T = BigInteger.fromBuffer(v)
 
   // Step H3, repeat until T is within the interval [1, n - 1] and is suitable for ECDSA
   while ((T.signum() <= 0) || (T.compareTo(curve.n) >= 0) || !checkSig(T)) {
-    k = crypto.createHmac('sha256', k)
+    k = createHmac('sha256', k)
       .update(v)
       .update(ZERO)
       .digest()
 
-    v = crypto.createHmac('sha256', k).update(v).digest()
+    v = createHmac('sha256', k).update(v).digest()
 
     // Step H1/H2a, again, ignored as tlen === qlen (256 bit)
     // Step H2b again
-    v = crypto.createHmac('sha256', k).update(v).digest()
+    v = createHmac('sha256', k).update(v).digest()
     T = BigInteger.fromBuffer(v)
   }
 
@@ -75,25 +75,21 @@ function deterministicGenerateK (curve, hash, d, checkSig) {
 }
 
 function sign (curve, hash, d) {
-  var r, s
-
   var e = BigInteger.fromBuffer(hash)
   var n = curve.n
   var G = curve.G
 
+  var r, s
   deterministicGenerateK(curve, hash, d, function (k) {
     var Q = G.multiply(k)
 
-    if (curve.isInfinity(Q))
-      return false
+    if (curve.isInfinity(Q)) return false
 
     r = Q.affineX.mod(n)
-    if (r.signum() === 0)
-      return false
+    if (r.signum() === 0) return false
 
     s = k.modInverse(n).multiply(e.add(d.multiply(r))).mod(n)
-    if (s.signum() === 0)
-      return false
+    if (s.signum() === 0) return false
 
     return true
   })
@@ -108,7 +104,7 @@ function sign (curve, hash, d) {
   return new ECSignature(r, s)
 }
 
-function verifyRaw (curve, e, signature, Q) {
+function verify (curve, hash, signature, Q) {
   var n = curve.n
   var G = curve.G
 
@@ -119,31 +115,33 @@ function verifyRaw (curve, e, signature, Q) {
   if (r.signum() <= 0 || r.compareTo(n) >= 0) return false
   if (s.signum() <= 0 || s.compareTo(n) >= 0) return false
 
-  // c = s^-1 mod n
-  var c = s.modInverse(n)
-
-  // 1.4.4 Compute u1 = es^−1 mod n
-  //               u2 = rs^−1 mod n
-  var u1 = e.multiply(c).mod(n)
-  var u2 = r.multiply(c).mod(n)
-
-  // 1.4.5 Compute R = (xR, yR) = u1G + u2Q
-  var R = G.multiplyTwo(u1, Q, u2)
-  var v = R.affineX.mod(n)
-
-  // 1.4.5 (cont.) Enforce R is not at infinity
-  if (curve.isInfinity(R)) return false
-
-  // 1.4.8 If v = r, output "valid", and if v != r, output "invalid"
-  return v.equals(r)
-}
-
-function verify (curve, hash, signature, Q) {
   // 1.4.2 H = Hash(M), already done by the user
   // 1.4.3 e = H
   var e = BigInteger.fromBuffer(hash)
 
-  return verifyRaw(curve, e, signature, Q)
+  // Compute s^-1
+  var sInv = s.modInverse(n)
+
+  // 1.4.4 Compute u1 = es^−1 mod n
+  //               u2 = rs^−1 mod n
+  var u1 = e.multiply(sInv).mod(n)
+  var u2 = r.multiply(sInv).mod(n)
+
+  // 1.4.5 Compute R = (xR, yR)
+  //               R = u1G + u2Q
+  var R = G.multiplyTwo(u1, Q, u2)
+
+  // 1.4.5 (cont.) Enforce R is not at infinity
+  if (curve.isInfinity(R)) return false
+
+  // 1.4.6 Convert the field element R.x to an integer
+  var xR = R.affineX
+
+  // 1.4.7 Set v = xR mod n
+  var v = xR.mod(n)
+
+  // 1.4.8 If v = r, output "valid", and if v != r, output "invalid"
+  return v.equals(r)
 }
 
 /**
@@ -181,14 +179,16 @@ function recoverPubKey (curve, e, signature, i) {
   var nR = R.multiply(n)
   assert(curve.isInfinity(nR), 'nR is not a valid curve point')
 
+  // Compute r^-1
+  var rInv = r.modInverse(n)
+
   // Compute -e from e
   var eNeg = e.negate().mod(n)
 
   // 1.6.1 Compute Q = r^-1 (sR -  eG)
   //               Q = r^-1 (sR + -eG)
-  var rInv = r.modInverse(n)
-
   var Q = R.multiplyTwo(s, G, eNeg).multiply(rInv)
+
   curve.validate(Q)
 
   return Q
@@ -223,6 +223,5 @@ module.exports = {
   deterministicGenerateK: deterministicGenerateK,
   recoverPubKey: recoverPubKey,
   sign: sign,
-  verify: verify,
-  verifyRaw: verifyRaw
+  verify: verify
 }

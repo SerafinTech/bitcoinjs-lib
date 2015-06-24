@@ -6,7 +6,7 @@ var networks = require('../src/networks')
 
 var Address = require('../src/address')
 var BigInteger = require('bigi')
-var ECKey = require('../src/eckey')
+var ECPair = require('../src/ecpair')
 
 var fixtures = require('./fixtures/message.json')
 
@@ -17,7 +17,7 @@ describe('message', function () {
         var network = networks[f.network]
         var actual = message.magicHash(f.message, network)
 
-        assert.equal(actual.toString('hex'), f.magicHash)
+        assert.strictEqual(actual.toString('hex'), f.magicHash)
       })
     })
   })
@@ -55,15 +55,17 @@ describe('message', function () {
       it(f.description, function () {
         var network = networks[f.network]
 
-        var privKey = new ECKey(new BigInteger(f.d), false)
-        var signature = message.sign(privKey, f.message, network)
-        assert.equal(signature.toString('base64'), f.signature)
+        var keyPair = new ECPair(new BigInteger(f.d), null, {
+          compressed: false
+        })
+        var signature = message.sign(keyPair, f.message, network)
+        assert.strictEqual(signature.toString('base64'), f.signature)
 
         if (f.compressed) {
-          var compressedPrivKey = new ECKey(new BigInteger(f.d))
+          var compressedPrivKey = new ECPair(new BigInteger(f.d))
           var compressedSignature = message.sign(compressedPrivKey, f.message)
 
-          assert.equal(compressedSignature.toString('base64'), f.compressed.signature)
+          assert.strictEqual(compressedSignature.toString('base64'), f.compressed.signature)
         }
       })
     })

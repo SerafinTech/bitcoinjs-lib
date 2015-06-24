@@ -11,6 +11,7 @@ function Block () {
   this.timestamp = 0
   this.bits = 0
   this.nonce = 0
+  this.size = 80
 }
 
 Block.fromBuffer = function (buffer) {
@@ -29,6 +30,7 @@ Block.fromBuffer = function (buffer) {
   }
 
   var block = new Block()
+  block.size = buffer.length
   block.version = readUInt32()
   block.prevHash = readSlice(32)
   block.merkleRoot = readSlice(32)
@@ -47,7 +49,8 @@ Block.fromBuffer = function (buffer) {
   // FIXME: poor performance
   function readTransaction () {
     var tx = Transaction.fromBuffer(buffer.slice(offset), true)
-
+    tx.blockPos = offset
+    tx.hash = tx.getHash()
     offset += tx.toBuffer().length
     return tx
   }

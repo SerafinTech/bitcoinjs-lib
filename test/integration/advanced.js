@@ -2,15 +2,17 @@
 
 var assert = require('assert')
 var bitcoin = require('../../')
-var blockchain = new (require('cb-helloblock'))('testnet')
+var blockchain = new (require('cb-insight'))('https://test-insight.bitpay.com')
+var faucetWithdraw = require('./utils').faucetWithdraw
+var pollUnspent = require('./utils').pollUnspent
 
 describe('bitcoinjs-lib (advanced)', function () {
   it('can sign a Bitcoin message', function () {
-    var key = bitcoin.ECKey.fromWIF('5KYZdUEo39z3FPrtuX2QbbwGnNP5zTd7yyr2SC1j299sBCnWjss')
+    var keyPair = bitcoin.ECPair.fromWIF('5KYZdUEo39z3FPrtuX2QbbwGnNP5zTd7yyr2SC1j299sBCnWjss')
     var message = 'This is an example of a signed message.'
 
-    var signature = bitcoin.message.sign(key, message)
-    assert.equal(signature.toString('base64'), 'G9L5yLFjti0QTHhPyFrZCT1V/MMnBtXKmoiKDZ78NDBjERki6ZTQZdSMCtkgoNmp17By9ItJr8o7ChX0XxY91nk=')
+    var signature = bitcoin.message.sign(keyPair, message)
+    assert.strictEqual(signature.toString('base64'), 'G9L5yLFjti0QTHhPyFrZCT1V/MMnBtXKmoiKDZ78NDBjERki6ZTQZdSMCtkgoNmp17By9ItJr8o7ChX0XxY91nk=')
   })
 
   it('can verify a Bitcoin message', function () {
@@ -24,13 +26,15 @@ describe('bitcoinjs-lib (advanced)', function () {
   it('can create an OP_RETURN transaction', function (done) {
     this.timeout(20000)
 
-    var key = bitcoin.ECKey.fromWIF('L1uyy5qTuGrVXrmrsvHWHgVzW9kKdrp27wBC7Vs6nZDTF2BRUVwy')
-    var address = key.pub.getAddress(bitcoin.networks.testnet).toString()
+    var keyPair = bitcoin.ECPair.makeRandom({
+      network: bitcoin.networks.testnet
+    })
+    var address = keyPair.getAddress().toString()
 
-    blockchain.addresses.__faucetWithdraw(address, 2e4, function (err) {
+    faucetWithdraw(address, 2e4, function (err) {
       if (err) return done(err)
 
-      blockchain.addresses.unspents(address, function (err, unspents) {
+      pollUnspent(blockchain, address, function (err, unspents) {
         if (err) return done(err)
 
         var tx = new bitcoin.TransactionBuilder()
@@ -41,7 +45,7 @@ describe('bitcoinjs-lib (advanced)', function () {
 
         tx.addInput(unspent.txId, unspent.vout)
         tx.addOutput(dataScript, 1000)
-        tx.sign(0, key)
+        tx.sign(0, keyPair)
 
         var txBuilt = tx.build()
 

@@ -13,7 +13,7 @@ describe('bufferutils', function () {
 
         var size = bufferutils.pushDataSize(f.dec)
 
-        assert.equal(size, f.hexPD.length / 2)
+        assert.strictEqual(size, f.hexPD.length / 2)
       })
     })
   })
@@ -27,9 +27,20 @@ describe('bufferutils', function () {
         var d = bufferutils.readPushDataInt(buffer, 0)
         var fopcode = parseInt(f.hexPD.substr(0, 2), 16)
 
-        assert.equal(d.opcode, fopcode)
-        assert.equal(d.number, f.dec)
-        assert.equal(d.size, buffer.length)
+        assert.strictEqual(d.opcode, fopcode)
+        assert.strictEqual(d.number, f.dec)
+        assert.strictEqual(d.size, buffer.length)
+      })
+    })
+
+    fixtures.invalid.readPushDataInt.forEach(function (f) {
+      if (!f.hexPD) return
+
+      it('decodes ' + f.hexPD + ' as null', function () {
+        var buffer = new Buffer(f.hexPD, 'hex')
+
+        var n = bufferutils.readPushDataInt(buffer, 0)
+        assert.strictEqual(n, null)
       })
     })
   })
@@ -40,11 +51,11 @@ describe('bufferutils', function () {
         var buffer = new Buffer(f.hex64, 'hex')
         var number = bufferutils.readUInt64LE(buffer, 0)
 
-        assert.equal(number, f.dec)
+        assert.strictEqual(number, f.dec)
       })
     })
 
-    fixtures.invalid.forEach(function (f) {
+    fixtures.invalid.readUInt64LE.forEach(function (f) {
       it('throws on ' + f.description, function () {
         var buffer = new Buffer(f.hex64, 'hex')
 
@@ -61,34 +72,18 @@ describe('bufferutils', function () {
         var buffer = new Buffer(f.hexVI, 'hex')
         var d = bufferutils.readVarInt(buffer, 0)
 
-        assert.equal(d.number, f.dec)
-        assert.equal(d.size, buffer.length)
+        assert.strictEqual(d.number, f.dec)
+        assert.strictEqual(d.size, buffer.length)
       })
     })
 
-    fixtures.invalid.forEach(function (f) {
+    fixtures.invalid.readUInt64LE.forEach(function (f) {
       it('throws on ' + f.description, function () {
         var buffer = new Buffer(f.hexVI, 'hex')
 
         assert.throws(function () {
           bufferutils.readVarInt(buffer, 0)
         }, new RegExp(f.exception))
-      })
-    })
-  })
-
-  describe('equal', function () {
-    fixtures.valid.forEach(function (f) {
-      describe('for ' + f.hexVI, function () {
-        fixtures.valid.forEach(function (f2) {
-          it('equates the string comparison: ' + f.hexVI + ' === ' + f2.hexVI, function () {
-            var a = new Buffer(f.hexVI, 'hex')
-            var b = new Buffer(f2.hexVI, 'hex')
-            var expected = f.hexVI === f2.hexVI
-
-            assert.equal(bufferutils.equal(a, b), expected)
-          })
-        })
       })
     })
   })
@@ -111,7 +106,7 @@ describe('bufferutils', function () {
       it('encodes ' + f.dec + ' correctly', function () {
         var buffer = bufferutils.varIntBuffer(f.dec)
 
-        assert.equal(buffer.toString('hex'), f.hexVI)
+        assert.strictEqual(buffer.toString('hex'), f.hexVI)
       })
     })
   })
@@ -121,7 +116,7 @@ describe('bufferutils', function () {
       it('determines the varIntSize of ' + f.dec + ' correctly', function () {
         var size = bufferutils.varIntSize(f.dec)
 
-        assert.equal(size, f.hexVI.length / 2)
+        assert.strictEqual(size, f.hexVI.length / 2)
       })
     })
   })
@@ -135,7 +130,7 @@ describe('bufferutils', function () {
         buffer.fill(0)
 
         var n = bufferutils.writePushDataInt(buffer, f.dec, 0)
-        assert.equal(buffer.slice(0, n).toString('hex'), f.hexPD)
+        assert.strictEqual(buffer.slice(0, n).toString('hex'), f.hexPD)
       })
     })
   })
@@ -147,11 +142,11 @@ describe('bufferutils', function () {
         buffer.fill(0)
 
         bufferutils.writeUInt64LE(buffer, f.dec, 0)
-        assert.equal(buffer.toString('hex'), f.hex64)
+        assert.strictEqual(buffer.toString('hex'), f.hex64)
       })
     })
 
-    fixtures.invalid.forEach(function (f) {
+    fixtures.invalid.readUInt64LE.forEach(function (f) {
       it('throws on ' + f.description, function () {
         var buffer = new Buffer(8)
         buffer.fill(0)
@@ -170,11 +165,11 @@ describe('bufferutils', function () {
         buffer.fill(0)
 
         var n = bufferutils.writeVarInt(buffer, f.dec, 0)
-        assert.equal(buffer.slice(0, n).toString('hex'), f.hexVI)
+        assert.strictEqual(buffer.slice(0, n).toString('hex'), f.hexVI)
       })
     })
 
-    fixtures.invalid.forEach(function (f) {
+    fixtures.invalid.readUInt64LE.forEach(function (f) {
       it('throws on ' + f.description, function () {
         var buffer = new Buffer(9)
         buffer.fill(0)

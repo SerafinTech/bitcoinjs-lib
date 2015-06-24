@@ -2,16 +2,16 @@
 
 var assert = require('assert')
 var base58 = require('bs58')
-var base58check = require('bs58check')
 
 var Bitcoin = require('../')
 var Address = Bitcoin.Address
 var Block = Bitcoin.Block
-var ECKey = Bitcoin.ECKey
+var ECPair = Bitcoin.ECPair
 var ECSignature = Bitcoin.ECSignature
 var Transaction = Bitcoin.Transaction
 var Script = Bitcoin.Script
 
+var bufferutils = Bitcoin.bufferutils
 var networks = Bitcoin.networks
 
 var base58_encode_decode = require('./fixtures/core/base58_encode_decode.json')
@@ -34,14 +34,14 @@ describe('Bitcoin-core', function () {
         var buffer = base58.decode(fb58)
         var actual = new Buffer(buffer).toString('hex')
 
-        assert.equal(actual, fhex)
+        assert.strictEqual(actual, fhex)
       })
 
       it('can encode ' + fhex, function () {
         var buffer = new Buffer(fhex, 'hex')
         var actual = base58.encode(buffer)
 
-        assert.equal(actual, fb58)
+        assert.strictEqual(actual, fb58)
       })
     })
   })
@@ -60,14 +60,15 @@ describe('Bitcoin-core', function () {
       var network = networks.bitcoin
 
       if (params.isPrivkey) return
-      if (params.isTestnet)
+      if (params.isTestnet) {
         network = networks.testnet
+      }
 
       it('can import ' + string, function () {
         var address = Address.fromBase58Check(string)
 
-        assert.equal(address.hash.toString('hex'), hex)
-        assert.equal(address.version, network[typeMap[params.addrType]])
+        assert.strictEqual(address.hash.toString('hex'), hex)
+        assert.strictEqual(address.version, network[typeMap[params.addrType]])
       })
     })
   })
@@ -95,32 +96,31 @@ describe('Bitcoin-core', function () {
   })
 
   // base58_keys_valid
-  describe('ECKey', function () {
+  describe('ECPair', function () {
     base58_keys_valid.forEach(function (f) {
       var string = f[0]
       var hex = f[1]
       var params = f[2]
-      var network = params.isTestnet ? networks.testnet : networks.bitcoin
 
       if (!params.isPrivkey) return
-      var privKey = ECKey.fromWIF(string)
+      var keyPair = ECPair.fromWIF(string)
 
-      it('imports ' + string + ' correctly', function () {
-        assert.equal(privKey.d.toHex(), hex)
-        assert.equal(privKey.pub.compressed, params.isCompressed)
+      it('imports ' + string, function () {
+        assert.strictEqual(keyPair.d.toHex(), hex)
+        assert.strictEqual(keyPair.compressed, params.isCompressed)
       })
 
       it('exports ' + hex + ' to ' + string, function () {
-        assert.equal(privKey.toWIF(network), string)
+        assert.strictEqual(keyPair.toWIF(), string)
       })
     })
   })
 
   // base58_keys_invalid
-  describe('ECKey', function () {
+  describe('ECPair', function () {
     var allowedNetworks = [
-      networks.bitcoin.wif,
-      networks.testnet.wif
+      networks.bitcoin,
+      networks.testnet
     ]
 
     base58_keys_invalid.forEach(function (f) {
@@ -128,11 +128,10 @@ describe('Bitcoin-core', function () {
 
       it('throws on ' + string, function () {
         assert.throws(function () {
-          ECKey.fromWIF(string)
-          var version = base58check.decode(string).readUInt8(0)
+          var keyPair = ECPair.fromWIF(string)
 
-          assert.notEqual(allowedNetworks.indexOf(version), -1, 'Invalid network')
-        }, /Invalid (checksum|compression flag|network|WIF payload)/)
+          assert(allowedNetworks.indexOf(keyPair.network) > -1, 'Invalid network')
+        }, /(Invalid|Unknown) (checksum|compression flag|network|WIF payload)/)
       })
     })
   })
@@ -142,8 +141,8 @@ describe('Bitcoin-core', function () {
       it('fromHex can parse ' + f.id, function () {
         var block = Block.fromHex(f.hex)
 
-        assert.equal(block.getId(), f.id)
-        assert.equal(block.transactions.length, f.transactions)
+        assert.strictEqual(block.getId(), f.id)
+        assert.strictEqual(block.transactions.length, f.transactions)
       })
     })
   })
@@ -161,21 +160,18 @@ describe('Bitcoin-core', function () {
       it('can decode ' + fhex, function () {
         var transaction = Transaction.fromHex(fhex)
 
-        transaction.ins.forEach(function (txin, i) {
+        transaction.ins.forEach(function (txIn, i) {
           var input = inputs[i]
-          var prevOutHash = input[0]
+
+          // reverse because test data is big-endian
+          var prevOutHash = bufferutils.reverse(new Buffer(input[0], 'hex'))
           var prevOutIndex = input[1]
           //          var prevOutScriptPubKey = input[2] // TODO: we don't have a ASM parser
 
-          var actualHash = txin.hash
-
-          // Test data is big-endian
-          Array.prototype.reverse.call(actualHash)
-
-          assert.equal(actualHash.toString('hex'), prevOutHash)
+          assert.deepEqual(txIn.hash, prevOutHash)
 
           // we read UInt32, not Int32
-          assert.equal(txin.index & 0xffffffff, prevOutIndex)
+          assert.strictEqual(txIn.index & 0xffffffff, prevOutIndex)
         })
       })
     })
@@ -191,30 +187,27 @@ describe('Bitcoin-core', function () {
       var scriptHex = f[1]
       var inIndex = f[2]
       var hashType = f[3]
-      var expectedHash = f[4]
 
-      it('should hash ' + txHex + ' correctly', function () {
+      // reverse because test data is big-endian
+      var expectedHash = bufferutils.reverse(new Buffer(f[4], 'hex'))
+
+      var hashTypes = []
+      if ((hashType & 0x1f) === Transaction.SIGHASH_NONE) hashTypes.push('SIGHASH_NONE')
+      else if ((hashType & 0x1f) === Transaction.SIGHASH_SINGLE) hashTypes.push('SIGHASH_SINGLE')
+      else hashTypes.push('SIGHASH_ALL')
+      if (hashType & Transaction.SIGHASH_ANYONECANPAY) hashTypes.push('SIGHASH_ANYONECANPAY')
+
+      var hashTypeName = hashTypes.join(' | ')
+
+      it('should hash ' + txHex.slice(0, 40) + '... (' + hashTypeName + ')', function () {
         var transaction = Transaction.fromHex(txHex)
-        assert.equal(transaction.toHex(), txHex)
+        assert.strictEqual(transaction.toHex(), txHex)
 
         var script = Script.fromHex(scriptHex)
-        assert.equal(script.toHex(), scriptHex)
+        assert.strictEqual(script.toHex(), scriptHex)
 
-        var actualHash
-        try {
-          actualHash = transaction.hashForSignature(inIndex, script, hashType)
-        } catch (e) {
-          // don't fail if we don't support it yet, TODO
-          if (!e.message.match(/not yet supported/))
-            throw e
-        }
-
-        if (actualHash !== undefined) {
-          // Test data is big-endian
-          Array.prototype.reverse.call(actualHash)
-
-          assert.equal(actualHash.toString('hex'), expectedHash)
-        }
+        var hash = transaction.hashForSignature(inIndex, script, hashType)
+        assert.deepEqual(hash, expectedHash)
       })
     })
   })
@@ -226,7 +219,7 @@ describe('Bitcoin-core', function () {
       it('can parse ' + hex, function () {
         var parsed = ECSignature.parseScriptSignature(buffer)
         var actual = parsed.signature.toScriptSignature(parsed.hashType)
-        assert.equal(actual.toString('hex'), hex)
+        assert.strictEqual(actual.toString('hex'), hex)
       })
     })
 

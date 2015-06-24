@@ -1,10 +1,14 @@
-# BitcoinJS (bitcoinjs-lib)
+# BitcoinJS (bitcoinjs-lib-bi) - BlockIndexer Branch
 
-[![Build Status](https://travis-ci.org/bitcoinjs/bitcoinjs-lib.png?branch=master)](https://travis-ci.org/bitcoinjs/bitcoinjs-lib)
-[![Coverage Status](https://coveralls.io/repos/bitcoinjs/bitcoinjs-lib/badge.png)](https://coveralls.io/r/bitcoinjs/bitcoinjs-lib)
-[![tip for next commit](http://tip4commit.com/projects/735.svg)](http://tip4commit.com/projects/735)
+bitcoinjs-lib fork to optimize block indexing
 
-[![NPM](https://nodei.co/npm/bitcoinjs-lib.png)](https://nodei.co/npm/bitcoinjs-lib/)
+[![Build Status](https://travis-ci.org/p2pmining/bitcoinjs-lib.png?branch=indexerBranch)](https://travis-ci.org/p2pmining/bitcoinjs-lib)
+[![Coverage Status](https://coveralls.io/repos/p2pmining/bitcoinjs-lib/badge.svg?branch=indexerBranch)](https://coveralls.io/r/p2pmining/bitcoinjs-lib?branch=indexerBranch)
+[![js-standard-style](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard)
+
+[![NPM](https://nodei.co/npm/bitcoinjs-lib-bi.png)](https://nodei.co/npm/bitcoinjs-lib-bi/)
+
+[![Browser Support](https://ci.testling.com/p2pmining/bitcoinjs-lib.png)](https://ci.testling.com/p2pmining/bitcoinjs-lib)
 
 The pure JavaScript Bitcoin library for node.js and browsers.
 A continued implementation of the original `0.1.3` version used by over a million wallet users; the backbone for almost all Bitcoin web wallets in production today.
@@ -25,6 +29,13 @@ A continued implementation of the original `0.1.3` version used by over a millio
 - Altcoin-ready: Capable of working with bitcoin-derived cryptocurrencies (such as Dogecoin).
 
 
+## Added Block Indexing Features
+
+- Pubkey script will return address in address.fromScript()
+- Transaction inputs and outputs contain index n
+- Transaction hashes are pre-calculated from when generated from block.fromBuffer()
+- Transaction block position is stored in transaction.blockPos when generated from block.fromBuffer() 
+
 ## Should I use this in production?
 
 If you are thinking of using the master branch of this library in production, *stop*.
@@ -35,14 +46,14 @@ If you are looking for the original, it is tagged as `0.1.3`. Unless you need it
 
 ## Installation
 
-`npm install bitcoinjs-lib`
+`npm install bitcoinjs-lib-bi`
 
 
 ## Setup
 
 ### Node.js
 
-    var bitcoin = require('bitcoinjs-lib')
+    var bitcoin = require('bitcoinjs-lib-bi')
 
 
 ### Browser
@@ -57,7 +68,7 @@ From your repository, create a `foobar.js` file
 ``` javascript
 var foobar = {
   base58: require('bs58'),
-  bitcoin: require('bitcoinjs-lib'),
+  bitcoin: require('bitcoinjs-lib-bi'),
   ecurve: require('ecurve'),
   BigInteger: require('bigi'),
   Buffer: require('buffer')
@@ -66,7 +77,7 @@ var foobar = {
 module.exports = foobar
 ```
 
-Each of these included packages are seperate to `bitcoinjs-lib`, and must be installed separately.
+Each of these included packages are seperate to `bitcoinjs-lib-bi`, and must be installed separately.
 They are however used in the bitcoinjs-lib public API.
 
 Using browserify, compile `foobar.js` for use in the browser:
@@ -77,6 +88,9 @@ You will then be able to load `foobar.js` into your browser, with each of the de
 
 **NOTE**: See our package.json for the currently supported version of browserify used by this repository.
 
+**NOTE**: When uglifying the javascript, you must exclude the following variable names from being mangled: `Array`, `BigInteger`, `Boolean`, `Buffer`, `ECPair`, `Function`, `Number`, `Point` and `Script`.
+This is because of the function-name-duck-typing used in [typeforce](https://github.com/dcousens/typeforce).
+
 
 ## Examples
 
@@ -84,23 +98,25 @@ The below examples are implemented as integration tests, they should be very eas
 
 - [Generate a random address](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/basic.js#L8)
 - [Generate a address from a SHA256 hash](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/basic.js#L20)
-- [Import an address via WIF](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/basic.js#L29)
-- [Create a Transaction](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/basic.js#L36)
+- [Generate a address and WIF for Litecoin](https://github.com/bitcoin/bitcoinjs-lib/blob/master/test/integration/basic.js#L29)
+- [Import an address via WIF](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/basic.js#L43)
+- [Create a Transaction](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/basic.js#L50)
 - [Sign a Bitcoin message](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/advanced.js#L9)
 - [Verify a Bitcoin message](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/advanced.js#L17)
 - [Create an OP RETURN transaction](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/advanced.js#L24)
 - [Create a 2-of-3 multisig P2SH address](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/multisig.js#L8)
-- [Spend from a 2-of-2 multisig P2SH address](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/multisig.js#L22)
+- [Spend from a 2-of-4 multisig P2SH address](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/multisig.js#L22)
 - [Generate a single-key stealth address](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/crypto.js#L7)
-- [Generate a dual-key stealth address](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/crypto.js#L42)
-- [Recover a BIP32 parent private key from the parent public key and a derived non-hardened child private key](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/crypto.js#L44)
-- [Recover a Private key from duplicate R values in a signature](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/crypto.js#L90)
+- [Generate a dual-key stealth address](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/crypto.js#L44)
+- [Recover a BIP32 parent private key from the parent public key and a derived non-hardened child private key](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/crypto.js#L46)
+- [Recover a Private key from duplicate R values in a signature](https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/crypto.js#L92)
 
 
 ## Projects utilizing BitcoinJS
 
 - [BitAddress](https://www.bitaddress.org)
 - [Blockchain.info](https://blockchain.info/wallet)
+- [Blocktrail](https://www.blocktrail.com/)
 - [Brainwallet](https://brainwallet.github.io)
 - [Coinkite](https://coinkite.com)
 - [Coinpunk](https://coinpunk.com)
@@ -115,6 +131,8 @@ The below examples are implemented as integration tests, they should be very eas
 
 
 ## Contributors
+
+Jason Serafin is the lead on this fork
 
 Stefan Thomas is the inventor and creator of this project. His pioneering work made Bitcoin web wallets possible.
 
@@ -158,5 +176,5 @@ This library is free and open-source software released under the MIT license.
 
 ## Copyright
 
-BitcoinJS (c) 2011-2014 Bitcoinjs-lib contributors
+BitcoinJS (c) 2011-2015 Bitcoinjs-lib contributors
 Released under MIT license

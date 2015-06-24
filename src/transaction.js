@@ -7,6 +7,7 @@ var opcodes = require('./opcodes')
 var Script = require('./script')
 
 function Transaction () {
+  this.blockPos = null
   this.version = 1
   this.locktime = 0
   this.ins = []
@@ -64,14 +65,16 @@ Transaction.fromBuffer = function (buffer, __disableAssert) {
         hash: hash,
         index: readUInt32(),
         script: readGenerationScript(),
-        sequence: readUInt32()
+        sequence: readUInt32(),
+        n: i
       })
     } else {
       tx.ins.push({
         hash: hash,
         index: readUInt32(),
         script: readScript(),
-        sequence: readUInt32()
+        sequence: readUInt32(),
+        n: i
       })
     }
   }
@@ -80,7 +83,8 @@ Transaction.fromBuffer = function (buffer, __disableAssert) {
   for (i = 0; i < voutLen; ++i) {
     tx.outs.push({
       value: readUInt64(),
-      script: readScript()
+      script: readScript(),
+      n: i
     })
   }
 
@@ -137,8 +141,25 @@ Transaction.prototype.addOutput = function (scriptPubKey, value) {
   }) - 1)
 }
 
+Transaction.prototype.byteLength = function () {
+  function scriptSize (script) {
+    var length = script.buffer.length
+
+    return bufferutils.varIntSize(length) + length
+  }
+
+  return (
+    8 +
+    bufferutils.varIntSize(this.ins.length) +
+    bufferutils.varIntSize(this.outs.length) +
+    this.ins.reduce(function (sum, input) { return sum + 40 + scriptSize(input.script) }, 0) +
+    this.outs.reduce(function (sum, output) { return sum + 8 + scriptSize(output.script) }, 0)
+  )
+}
+
 Transaction.prototype.clone = function () {
   var newTx = new Transaction()
+  newTx.blockPos = this.blockPos
   newTx.version = this.version
   newTx.locktime = this.locktime
 
@@ -147,19 +168,23 @@ Transaction.prototype.clone = function () {
       hash: txIn.hash,
       index: txIn.index,
       script: txIn.script,
-      sequence: txIn.sequence
+      sequence: txIn.sequence,
+      n: txIn.n
     }
   })
 
   newTx.outs = this.outs.map(function (txOut) {
     return {
       script: txOut.script,
-      value: txOut.value
+      value: txOut.value,
+      n: txOut.n
     }
   })
 
   return newTx
 }
+
+var one = new Buffer('0000000000000000000000000000000000000000000000000000000000000001', 'hex')
 
 /**
  * Hash transaction for signing a specific input.
@@ -175,33 +200,71 @@ Transaction.prototype.hashForSignature = function (inIndex, prevOutScript, hashT
   typeForce('Number', hashType)
 
   assert(inIndex >= 0, 'Invalid vin index')
-  assert(inIndex < this.ins.length, 'Invalid vin index')
+
+  // https://github.com/bitcoin/bitcoin/blob/master/src/test/sighash_tests.cpp#L29
+  if (inIndex >= this.ins.length) return one
 
   var txTmp = this.clone()
-  var hashScript = prevOutScript.without(opcodes.OP_CODESEPARATOR)
 
-  // Blank out other inputs' signatures
-  txTmp.ins.forEach(function (txIn) {
-    txIn.script = Script.EMPTY
-  })
+  // in case concatenating two scripts ends up with two codeseparators,
+  // or an extra one at the end, this prevents all those possible incompatibilities.
+  var hashScript = prevOutScript.without(opcodes.OP_CODESEPARATOR)
+  var i
+
+  // blank out other inputs' signatures
+  txTmp.ins.forEach(function (input) { input.script = Script.EMPTY })
   txTmp.ins[inIndex].script = hashScript
 
-  var hashTypeModifier = hashType & 0x1f
+  // blank out some of the inputs
+  if ((hashType & 0x1f) === Transaction.SIGHASH_NONE) {
+    // wildcard payee
+    txTmp.outs = []
 
-  if (hashTypeModifier === Transaction.SIGHASH_NONE) {
-    assert(false, 'SIGHASH_NONE not yet supported')
-  } else if (hashTypeModifier === Transaction.SIGHASH_SINGLE) {
-    assert(false, 'SIGHASH_SINGLE not yet supported')
+    // let the others update at will
+    txTmp.ins.forEach(function (input, i) {
+      if (i !== inIndex) {
+        input.sequence = 0
+      }
+    })
+
+  } else if ((hashType & 0x1f) === Transaction.SIGHASH_SINGLE) {
+    var nOut = inIndex
+
+    // only lock-in the txOut payee at same index as txIn
+    // https://github.com/bitcoin/bitcoin/blob/master/src/test/sighash_tests.cpp#L60
+    if (nOut >= this.outs.length) return one
+
+    txTmp.outs = txTmp.outs.slice(0, nOut + 1)
+
+    // blank all other outputs (clear scriptPubKey, value === -1)
+    var stubOut = {
+      script: Script.EMPTY,
+      valueBuffer: new Buffer('ffffffffffffffff', 'hex')
+    }
+
+    for (i = 0; i < nOut; i++) {
+      txTmp.outs[i] = stubOut
+    }
+
+    // let the others update at will
+    txTmp.ins.forEach(function (input, i) {
+      if (i !== inIndex) {
+        input.sequence = 0
+      }
+    })
   }
 
+  // blank out other inputs completely, not recommended for open transactions
   if (hashType & Transaction.SIGHASH_ANYONECANPAY) {
-    assert(false, 'SIGHASH_ANYONECANPAY not yet supported')
+    txTmp.ins[0] = txTmp.ins[inIndex]
+    txTmp.ins = txTmp.ins.slice(0, 1)
   }
 
-  var hashTypeBuffer = new Buffer(4)
-  hashTypeBuffer.writeInt32LE(hashType, 0)
+  // serialize and hash
+  var buffer = new Buffer(txTmp.byteLength() + 4)
+  buffer.writeInt32LE(hashType, buffer.length - 4)
+  txTmp.toBuffer().copy(buffer, 0)
 
-  var buffer = Buffer.concat([txTmp.toBuffer(), hashTypeBuffer])
   return crypto.hash256(buffer)
 }
 
@@ -215,19 +278,7 @@ Transaction.prototype.getId = function () {
 }
 
 Transaction.prototype.toBuffer = function () {
-  function scriptSize (script) {
-    var length = script.buffer.length
-
-    return bufferutils.varIntSize(length) + length
-  }
-
-  var buffer = new Buffer(
-    8 +
-    bufferutils.varIntSize(this.ins.length) +
-    bufferutils.varIntSize(this.outs.length) +
-    this.ins.reduce(function (sum, input) { return sum + 40 + scriptSize(input.script) }, 0) +
-    this.outs.reduce(function (sum, output) { return sum + 8 + scriptSize(output.script) }, 0)
-  )
+  var buffer = new Buffer(this.byteLength())
 
   var offset = 0
   function writeSlice (slice) {
@@ -263,7 +314,12 @@ Transaction.prototype.toBuffer = function () {
 
   writeVarInt(this.outs.length)
   this.outs.forEach(function (txOut) {
-    writeUInt64(txOut.value)
+    if (!txOut.valueBuffer) {
+      writeUInt64(txOut.value)
+    } else {
+      writeSlice(txOut.valueBuffer)
+    }
+
     writeVarInt(txOut.script.buffer.length)
     writeSlice(txOut.script.buffer)
   })

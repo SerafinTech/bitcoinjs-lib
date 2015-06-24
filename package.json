@@ -1,6 +1,6 @@
 {
   "name": "bitcoinjs-lib",
-  "version": "1.5.0",
+  "version": "2.0.0-pre",
   "description": "Client-side Bitcoin JavaScript library",
   "main": "./src/index.js",
   "keywords": [
@@ -37,29 +37,33 @@
     "coveralls": "npm run-script coverage && coveralls < coverage/lcov.info",
     "integration": "mocha --reporter list test/integration/*.js",
     "standard": "standard",
-    "test": "npm run-script unit",
+    "test": "npm run-script unit && npm run standard",
     "unit": "istanbul test mocha -- --reporter list test/*.js"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/bitcoinjs/bitcoinjs-lib.git"
+    "url": "https://github.com/p2pmining/bitcoinjs-lib.git"
   },
   "dependencies": {
     "bigi": "^1.4.0",
-    "bs58check": "^1.0.4",
+    "bs58check": "^1.0.5",
+    "create-hash": "^1.1.0",
+    "create-hmac": "^1.1.3",
     "ecurve": "^1.0.0",
-    "typeforce": "^0.1.0"
+    "randombytes": "^2.0.1",
+    "typeforce": "^1.0.0"
   },
   "devDependencies": {
     "async": "^0.9.0",
-    "browserify": "^9.0.3",
+    "browserify": "^10.0.0",
     "bs58": "^2.0.1",
-    "cb-helloblock": "^0.4.10",
+    "cb-blockr": "^3.1.1",
+    "cb-insight": "git://github.com/weilu/cb-insight",
     "coveralls": "^2.11.2",
     "istanbul": "^0.3.5",
-    "mocha": "^2.1.0",
-    "mocha-lcov-reporter": "0.0.1",
+    "mocha": "^2.2.0",
+    "proxyquire": "^1.4.0",
     "sinon": "^1.12.2",
-    "standard": "^2.7.3"
+    "standard": "^4.0.0"
   }
 }
