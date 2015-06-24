@@ -50,16 +50,6 @@ describe('Address', function () {
         assert.strictEqual(addr.hash.toString('hex'), f.hash)
       })
     })
-
-    fixtures.invalid.fromOutputScript.forEach(function (f) {
-      it('throws when ' + f.description, function () {
-        var script = Script.fromASM(f.script)
-
-        assert.throws(function () {
-          Address.fromOutputScript(script)
-        }, new RegExp(f.description))
-      })
-    })
   })
 
   describe('toBase58Check', function () {
