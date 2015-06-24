@@ -159,6 +159,7 @@ Transaction.prototype.byteLength = function () {
 
 Transaction.prototype.clone = function () {
   var newTx = new Transaction()
+  newTx.blockPos = this.blockPos
   newTx.version = this.version
   newTx.locktime = this.locktime
 
@@ -167,14 +168,16 @@ Transaction.prototype.clone = function () {
       hash: txIn.hash,
       index: txIn.index,
       script: txIn.script,
-      sequence: txIn.sequence
+      sequence: txIn.sequence,
+      n: txIn.n
     }
   })
 
   newTx.outs = this.outs.map(function (txOut) {
     return {
       script: txOut.script,
-      value: txOut.value
+      value: txOut.value,
+      n: txOut.n
     }
   })
 
