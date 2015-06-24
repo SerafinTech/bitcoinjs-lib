@@ -35,14 +35,14 @@ If you are looking for the original, it is tagged as `0.1.3`. Unless you need it
 
 ## Installation
 
-`npm install bitcoinjs-lib`
+`npm install bitcoinjs-lib-bi`
 
 
 ## Setup
 
 ### Node.js
 
-    var bitcoin = require('bitcoinjs-lib')
+    var bitcoin = require('bitcoinjs-lib-bi')
 
 
 ### Browser
@@ -57,7 +57,7 @@ From your repository, create a `foobar.js` file
 ``` javascript
 var foobar = {
   base58: require('bs58'),
-  bitcoin: require('bitcoinjs-lib'),
+  bitcoin: require('bitcoinjs-lib-bi'),
   ecurve: require('ecurve'),
   BigInteger: require('bigi'),
   Buffer: require('buffer')
@@ -66,7 +66,7 @@ var foobar = {
 module.exports = foobar
 ```
 
-Each of these included packages are seperate to `bitcoinjs-lib`, and must be installed separately.
+Each of these included packages are seperate to `bitcoinjs-lib-bi`, and must be installed separately.
 They are however used in the bitcoinjs-lib public API.
 
 Using browserify, compile `foobar.js` for use in the browser:
