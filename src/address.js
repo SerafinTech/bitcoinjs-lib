@@ -37,8 +37,8 @@ Address.fromOutputScript = function (script, network) {
 
   if (scripts.isPubKeyHashOutput(script)) return new Address(script.chunks[2], network.pubKeyHash)
   if (scripts.isScriptHashOutput(script)) return new Address(script.chunks[1], network.scriptHash)
-  if (scripts.isPubKeyOutput(script)) return new Address(crypto.hash160(script.chunks[0]),network.pubKeyHash)
-  
+  if (scripts.isPubKeyOutput(script)) return new Address(crypto.hash160(script.chunks[0]), network.pubKeyHash)
+
   return null
 }
 
