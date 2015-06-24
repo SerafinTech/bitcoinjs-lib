@@ -4,6 +4,7 @@ bitcoinjs-lib fork to optimize block indexing
 
 [![Build Status](https://travis-ci.org/p2pmining/bitcoinjs-lib.png?branch=indexerBranch)](https://travis-ci.org/p2pmining/bitcoinjs-lib)
 [![Coverage Status](https://coveralls.io/repos/p2pmining/bitcoinjs-lib/badge.svg?branch=indexerBranch)](https://coveralls.io/r/p2pmining/bitcoinjs-lib?branch=indexerBranch)
+
 [![js-standard-style](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard)
 
 [![NPM](https://nodei.co/npm/bitcoinjs-lib-bi.png)](https://nodei.co/npm/bitcoinjs-lib-bi/)
