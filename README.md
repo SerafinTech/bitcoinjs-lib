@@ -1,10 +1,8 @@
-# BitcoinJS (bitcoinjs-lib)
+# BitcoinJS (bitcoinjs-lib) - BlockIndexer Branch
 
-[![Build Status](https://travis-ci.org/bitcoinjs/bitcoinjs-lib.png?branch=master)](https://travis-ci.org/bitcoinjs/bitcoinjs-lib)
-[![Coverage Status](https://coveralls.io/repos/bitcoinjs/bitcoinjs-lib/badge.png)](https://coveralls.io/r/bitcoinjs/bitcoinjs-lib)
-[![tip for next commit](http://tip4commit.com/projects/735.svg)](http://tip4commit.com/projects/735)
+[![Build Status](https://travis-ci.org/p2pmining/bitcoinjs-lib.png?branch=indexerBranch)](https://travis-ci.org/p2pmining/bitcoinjs-lib)
+[![Coverage Status](https://coveralls.io/repos/p2pmining/bitcoinjs-lib/badge.png)](https://coveralls.io/r/bitcoinjs/bitcoinjs-lib)
 
-[![NPM](https://nodei.co/npm/bitcoinjs-lib.png)](https://nodei.co/npm/bitcoinjs-lib/)
 [![js-standard-style](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard)
 
 
