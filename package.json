@@ -42,7 +42,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/bitcoinjs/bitcoinjs-lib.git"
+    "url": "https://github.com/p2pmining/bitcoinjs-lib.git"
   },
   "dependencies": {
     "bigi": "^1.4.0",
