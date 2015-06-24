@@ -1,7 +1,7 @@
 # BitcoinJS (bitcoinjs-lib) - BlockIndexer Branch
 
 [![Build Status](https://travis-ci.org/p2pmining/bitcoinjs-lib.png?branch=indexerBranch)](https://travis-ci.org/p2pmining/bitcoinjs-lib)
-[![Coverage Status](https://coveralls.io/repos/p2pmining/bitcoinjs-lib/badge.png)](https://coveralls.io/r/p2pmining/bitcoinjs-lib)
+[![Coverage Status](https://coveralls.io/repos/p2pmining/bitcoinjs-lib/badge.svg?branch=indexerBranch)](https://coveralls.io/r/p2pmining/bitcoinjs-lib?branch=indexerBranch)
 
 [![js-standard-style](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard)
 
