@@ -8,7 +8,6 @@ bitcoinjs-lib fork to optimize block indexing
 
 [![NPM](https://nodei.co/npm/bitcoinjs-lib-bi.png)](https://nodei.co/npm/bitcoinjs-lib-bi/)
 
-[![Browser Support](https://ci.testling.com/p2pmining/bitcoinjs-lib.png)](https://ci.testling.com/p2pmining/bitcoinjs-lib)
 
 The pure JavaScript Bitcoin library for node.js and browsers.
 A continued implementation of the original `0.1.3` version used by over a million wallet users; the backbone for almost all Bitcoin web wallets in production today.
