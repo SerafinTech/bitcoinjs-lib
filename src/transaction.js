@@ -65,14 +65,16 @@ Transaction.fromBuffer = function (buffer, __disableAssert) {
         hash: hash,
         index: readUInt32(),
         script: readGenerationScript(),
-        sequence: readUInt32()
+        sequence: readUInt32(),
+        n: i
       })
     } else {
       tx.ins.push({
         hash: hash,
         index: readUInt32(),
         script: readScript(),
-        sequence: readUInt32()
+        sequence: readUInt32(),
+        n: i
       })
     }
   }
@@ -81,7 +83,8 @@ Transaction.fromBuffer = function (buffer, __disableAssert) {
   for (i = 0; i < voutLen; ++i) {
     tx.outs.push({
       value: readUInt64(),
-      script: readScript()
+      script: readScript(),
+      n: i
     })
   }
 
