@@ -1,4 +1,6 @@
-# BitcoinJS (bitcoinjs-lib) - BlockIndexer Branch
+# BitcoinJS (bitcoinjs-lib-bi) - BlockIndexer Branch
+
+bitcoinjs-lib fork to optimize block indexing
 
 [![Build Status](https://travis-ci.org/p2pmining/bitcoinjs-lib.png?branch=indexerBranch)](https://travis-ci.org/p2pmining/bitcoinjs-lib)
 [![Coverage Status](https://coveralls.io/repos/p2pmining/bitcoinjs-lib/badge.svg?branch=indexerBranch)](https://coveralls.io/r/p2pmining/bitcoinjs-lib?branch=indexerBranch)
@@ -23,7 +25,13 @@ A continued implementation of the original `0.1.3` version used by over a millio
 - Fast: Optimized code, uses typed arrays instead of byte arrays for performance.
 - Experiment-friendly: Bitcoin Mainnet and Testnet support.
 - Altcoin-ready: Capable of working with bitcoin-derived cryptocurrencies (such as Dogecoin).
+- 
+## Added Block Indexing Features
 
+- Pubkey script will return address in address.fromScript()
+- Transaction inputs and outputs contain index n
+- Transaction hashes is pre-calculated from when generated from block.fromBuffer()
+- Transaction block position is stored in transaction.blockPos when generated from block.fromBuffer() 
 
 ## Should I use this in production?
 
@@ -120,6 +128,8 @@ The below examples are implemented as integration tests, they should be very eas
 
 
 ## Contributors
+
+Jason Serafin is the lead on this fork
 
 Stefan Thomas is the inventor and creator of this project. His pioneering work made Bitcoin web wallets possible.
 
