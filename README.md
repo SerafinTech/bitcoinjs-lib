@@ -25,12 +25,13 @@ A continued implementation of the original `0.1.3` version used by over a millio
 - Fast: Optimized code, uses typed arrays instead of byte arrays for performance.
 - Experiment-friendly: Bitcoin Mainnet and Testnet support.
 - Altcoin-ready: Capable of working with bitcoin-derived cryptocurrencies (such as Dogecoin).
-- 
+
+
 ## Added Block Indexing Features
 
 - Pubkey script will return address in address.fromScript()
 - Transaction inputs and outputs contain index n
-- Transaction hashes is pre-calculated from when generated from block.fromBuffer()
+- Transaction hashes are pre-calculated from when generated from block.fromBuffer()
 - Transaction block position is stored in transaction.blockPos when generated from block.fromBuffer() 
 
 ## Should I use this in production?
